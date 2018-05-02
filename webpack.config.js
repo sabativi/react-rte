@@ -45,6 +45,14 @@ module.exports = [{
   },
   module: {
     rules: rules,
+    loaders: [
+      {
+        test: /plugin\.css$/,
+        loaders: [
+          'style-loader', 'css',
+        ],
+      },
+    ],
   },
   plugins: [
     new webpack.DefinePlugin({

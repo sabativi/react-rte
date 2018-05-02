@@ -47,6 +47,7 @@ export default class EditorDemo extends Component {
             placeholder="Tell a story"
             toolbarClassName="demo-toolbar"
             editorClassName="demo-editor"
+            autoFocus
             readOnly={this.state.readOnly}
             customControls={[
               // eslint-disable-next-line no-unused-vars

@@ -1,6 +1,6 @@
 /* @flow */
 import React, {Component} from 'react';
-import {CompositeDecorator, Editor, EditorState, Modifier, RichUtils, Entity} from 'draft-js';
+import {CompositeDecorator, ContentBlock, EditorState, Modifier, RichUtils, Entity} from 'draft-js';
 import getDefaultKeyBinding from 'draft-js/lib/getDefaultKeyBinding';
 import changeBlockDepth from './lib/changeBlockDepth';
 import changeBlockType from './lib/changeBlockType';
@@ -17,13 +17,48 @@ import cx from 'classnames';
 import autobind from 'class-autobind';
 import EventEmitter from 'events';
 import {BLOCK_TYPE} from 'draft-js-utils';
+import MultiDecorator from 'draft-js-plugins-editor/lib/Editor/MultiDecorator';
 
 import './Draft.global.css';
 import styles from './RichTextEditor.css';
 
-import type {ContentBlock} from 'draft-js';
-import type {ToolbarConfig, CustomControl} from './lib/EditorToolbarConfig';
-import type {ImportOptions} from './lib/EditorValue';
+import { ImportOptions } from './lib/EditorValue';
+
+import Editor from 'draft-js-plugins-editor';
+import createMentionPlugin, { defaultSuggestionsFilter } from 'draft-js-mention-plugin';
+
+const mentions = [
+  {
+    name: 'Matthew Russell',
+    link: 'https://twitter.com/mrussell247',
+    avatar: 'https://pbs.twimg.com/profile_images/517863945/mattsailing_400x400.jpg',
+  },
+  {
+    name: 'Julian Krispel-Samsel',
+    link: 'https://twitter.com/juliandoesstuff',
+    avatar: 'https://avatars2.githubusercontent.com/u/1188186?v=3&s=400',
+  },
+  {
+    name: 'Jyoti Puri',
+    link: 'https://twitter.com/jyopur',
+    avatar: 'https://avatars0.githubusercontent.com/u/2182307?v=3&s=400',
+  },
+  {
+    name: 'Max Stoiber',
+    link: 'https://twitter.com/mxstbr',
+    avatar: 'https://pbs.twimg.com/profile_images/763033229993574400/6frGyDyA_400x400.jpg',
+  },
+  {
+    name: 'Nik Graf',
+    link: 'https://twitter.com/nikgraf',
+    avatar: 'https://avatars0.githubusercontent.com/u/223045?v=3&s=400',
+  },
+  {
+    name: 'Pascal Brandt',
+    link: 'https://twitter.com/psbrandt',
+    avatar: 'https://pbs.twimg.com/profile_images/688487813025640448/E6O6I011_400x400.png',
+  },
+];
 
 import ButtonGroup from './ui/ButtonGroup';
 import Button from './ui/Button';
@@ -41,6 +76,10 @@ const styleMap = {
   },
 };
 
+var decorator = new CompositeDecorator([
+  LinkDecorator,
+  ImageDecorator,
+]);
 type ChangeHandler = (value: EditorValue) => any;
 
 type Props = {
@@ -64,26 +103,47 @@ type Props = {
   toolbarStyle?: Object;
 };
 
-export default class RichTextEditor extends Component {
-  props: Props;
-  _keyEmitter: EventEmitter;
+decorator = new MultiDecorator([decorator]);
 
-  constructor() {
-    super(...arguments);
+export default class RichTextEditor extends Component {
+  constructor(props) {
+    super(props);
     this._keyEmitter = new EventEmitter();
+    this.mentionPlugin = createMentionPlugin();
+    this.state = {
+      editorState: EditorState.createEmpty(),
+      suggestions: props.mentions || mentions,
+    }
     autobind(this);
   }
 
   componentDidMount() {
-    const {autoFocus} = this.props;
+    const { autoFocus } = this.props;
 
     if (!autoFocus) {
       return;
     }
-
-    this._focus();
+    setTimeout(() => this._focus());
   }
 
+  onChange(editorState) {
+    this.setState({
+      editorState,
+    });
+  }
+
+  onSearchChange({ value }) {
+    this.setState({
+      suggestions: defaultSuggestionsFilter(value, mentions),
+    });
+  }
+
+  onAddMention = (mention) => {
+    if(this.props.onAddMention) {
+      this.props.onAddMention(mention);
+    }
+    console.log(`${mention} click`);
+  }
   render() {
     let {
       value,
@@ -115,6 +175,8 @@ export default class RichTextEditor extends Component {
     if (readOnly == null) {
       readOnly = disabled;
     }
+    const { MentionSuggestions } = this.mentionPlugin;
+    const plugins = [this.mentionPlugin];
     let editorToolbar;
     if (!readOnly) {
       editorToolbar = (
@@ -138,6 +200,7 @@ export default class RichTextEditor extends Component {
             {...otherProps}
             blockStyleFn={composite(defaultBlockStyleFn, blockStyleFn)}
             customStyleMap={customStyleMap}
+            plugins={plugins}
             editorState={editorState}
             handleReturn={this._handleReturn}
             keyBindingFn={keyBindingFn || this._customKeyHandler}
@@ -148,6 +211,11 @@ export default class RichTextEditor extends Component {
             ref="editor"
             spellCheck={true}
             readOnly={readOnly}
+          />
+           <MentionSuggestions
+            onSearchChange={this.onSearchChange}
+            suggestions={this.state.suggestions}
+            onAddMention={this.onAddMention}
           />
         </div>
       </div>
@@ -346,7 +414,6 @@ function defaultBlockStyleFn(block: ContentBlock): string {
   }
 }
 
-const decorator = new CompositeDecorator([LinkDecorator, ImageDecorator]);
 
 function createEmptyValue(): EditorValue {
   return EditorValue.createEmpty(decorator);
