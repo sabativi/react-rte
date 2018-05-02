@@ -134,7 +134,7 @@ export default class RichTextEditor extends Component {
 
   onSearchChange({ value }) {
     this.setState({
-      suggestions: defaultSuggestionsFilter(value, mentions),
+      suggestions: defaultSuggestionsFilter(value, this.props.mentions),
     });
   }
 

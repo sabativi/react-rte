@@ -48,6 +48,10 @@ export default class EditorDemo extends Component {
             toolbarClassName="demo-toolbar"
             editorClassName="demo-editor"
             autoFocus
+            mentions={[
+              { name: 'Toto' },
+              { name: 'Titi' },
+            ]}
             readOnly={this.state.readOnly}
             customControls={[
               // eslint-disable-next-line no-unused-vars
