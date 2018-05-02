@@ -142,7 +142,6 @@ export default class RichTextEditor extends Component {
     if(this.props.onAddMention) {
       this.props.onAddMention(mention);
     }
-    console.log(`${mention} click`);
   }
   render() {
     let {
